@@ -29,6 +29,7 @@ Below is a list of devices supported in this repo (please note this list is alwa
 
 ### Digital Local Temperature:
 - [TMP118](https://www.ti.com/product/TMP118) ±0.1°C accurate, ultrasmall (336μm²) thin (240μm) I²C digital temperature sensor
+- [TMP4413](https://www.ti.com/product/TMP4413) High-Accuracy 3-Channel (2-Remote and 1-Local) 1.2V Logic Compatible Temperature Sensor with β Compensation
 
 
 ### Relative Humidity & Temperature:
