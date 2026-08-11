@@ -1,0 +1,120 @@
+//TMP4413 Example Code to allow users to read from the TMP4413 temperature sensor in One-Shot Mode using a C-based program.
+//Author: Gage Farmer
+//Texas Instruments
+//v1.0
+
+/*
+
+Copyright <2025> <Texas Instruments - http://www.ti.com/>
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY 
+AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
+OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+OF THE POSSIBILITY OF SUCH DAMAGE.
+
+*/
+
+ #include <Wire.h>
+
+//|| Device Definitions ||\\
+
+// Register Configurations
+#define DEVICE_CONFIG_REG_ADDR 0x03  // or 0x09
+#define DEVICE_ADDR 0x7C // 4.7k Ohm Resistor from T_CRIT to VDD
+#define DEVICE_TEMP_REG_ADDR_HI 0x00 //
+#define DEVICE_TEMP_REG_ADDR_LO 0x29 //
+
+// Device Mode Options \\
+
+// One-Shot
+#define CONFIG_OS 0x40 //
+#define TRIGGER_OS 0x0F //
+// Continuous
+//#define CONFIG_CONTINUOUS 0x00 //
+
+
+void setup() {
+  
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+  delay(5000);
+  Wire.begin();
+  Serial.println("TMP4413 Arduino Example");
+  
+
+  device_init(); // initialize device One-Shot
+  
+  delay(8); // wait 8ms for device to initialize
+
+}
+
+void loop() {
+
+  // put your main code here, to run repeatedly:
+
+  int16_t tempData = getData(DEVICE_ADDR, DEVICE_TEMP_REG_ADDR_HI, DEVICE_TEMP_REG_ADDR_LO); // Pass device address and temp register address
+
+  float celcius = tempData * 0.0625 / 16; // convert raw data to Celsius 
+
+  Serial.print("Temp (C): "); // optional print commands for serial output
+  Serial.println(celcius);
+
+  delay(1000);  // wait one second until next temp read
+
+}
+
+// initialize device and load configuration into sensor
+
+void device_init(){
+
+  Wire.beginTransmission(DEVICE_ADDR); // initiate contact with sensor
+
+  Wire.write(DEVICE_CONFIG_REG_ADDR); // write to config register
+      
+  Wire.write(CONFIG_OS); // write OS mode to config register
+      
+  Wire.endTransmission();
+
+}
+
+// read from TMP4413 temperature register and return raw data
+
+int16_t getData(int8_t sensorAddr, int8_t tempRegHi, int8_t tempRegLo) {
+  
+  // Trigger One-Shot Measurement (REMOVE IF CONTINUOUS)
+  Wire.beginTransmission(sensorAddr);
+  Wire.write(TRIGGER_OS);
+  Wire.write(0x01); // Write any value to 0x0F to trigger One-Shot
+  Wire.endTransmission();
+
+  delay(15); // Wait for conversion to complete
+
+  // Get Temp Hi Byte
+  Wire.beginTransmission(sensorAddr);
+  Wire.write(tempRegHi);
+  Wire.endTransmission();
+  Wire.requestFrom(sensorAddr, 1); // request 1 bytes from TMP4413
+
+  int16_t bytes = Wire.read() << 8; // load the MSB of raw temp data into 16-bit bytes variable
+
+  // Get Temp Lo Byte
+  Wire.beginTransmission(sensorAddr);
+  Wire.write(tempRegLo);
+  Wire.endTransmission();
+  Wire.requestFrom(sensorAddr, 1); // request 1 byte from TMP4413
+
+  bytes |= Wire.read(); // load remaining LSB into bytes variable
+
+  return bytes;
+      
+}
+ 
