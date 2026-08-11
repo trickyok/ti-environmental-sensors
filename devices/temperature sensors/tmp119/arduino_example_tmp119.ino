@@ -34,8 +34,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Device Mode Options \\
 
+// Shutdown
+#define CONFIG_SD 0x0620 //
 // One-Shot
-#define CONFIG_OS 0x0620 //
+#define CONFIG_OS 0x0E20 // Triggers conversion before shutdown
 // Continuous
 //#define CONFIG_CONTINUOUS 0x0220 //
 
@@ -78,7 +80,7 @@ void device_init(){
 
   Wire.write(DEVICE_CONFIG_REG_ADDR); // write to config register
       
-  Wire.write(CONFIG_OS); // write OS mode to config register
+  Wire.write(CONFIG_SD); // write SD mode to config register
       
   Wire.endTransmission();
 
@@ -88,6 +90,14 @@ void device_init(){
 
 int16_t getData(int8_t sensorAddr, int8_t tempReg) {
 
+ // Send One-Shot command
+ Wire.beginTransmission(sensorAddr);
+ Wire.write(DEVICE_CONFIG_REG_ADDR);
+ Wire.write(CONFIG_OS);
+ Wire.endTransmission();
+
+ delay(15);
+ 
   // Get Temp Bytes
   Wire.beginTransmission(sensorAddr);
   Wire.write(tempReg);
